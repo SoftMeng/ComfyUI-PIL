@@ -1,6 +1,7 @@
 import numpy as np
 import torch
-from PIL import Image, ImageFilter, ImageEnhance, ImageCms, ImageOps
+import os
+from PIL import Image, ImageFilter, ImageEnhance, ImageCms, ImageOps, ImageDraw, ImageFont
 
 sRGB_profile = ImageCms.createProfile("sRGB")
 Lab_profile = ImageCms.createProfile("LAB")
@@ -134,7 +135,7 @@ def row_noise(pim, height, weight, w):
         if calculate_noise_count(pim, w, h, weight, height) < 4:
             pim[w, h] = 255
 
-def mexx_image_filter(img, image_filter):
+def mexx_image_filter(img, image_filter,write_text):
     if image_filter == "线稿-LINE0":
         # 转换为灰度图
         gray_image = img.convert("L")
@@ -330,12 +331,66 @@ def mexx_image_filter(img, image_filter):
         contrast_enhancer = ImageEnhance.Contrast(img)
         enhanced_image = contrast_enhancer.enhance(5.0)
         return enhanced_image
+    elif image_filter == "框":
+        border_size = 20
+        # 获取原始图片的尺寸
+        img_width, img_height = img.size
+
+        # 计算相框的尺寸（原始图片的尺寸加上边框的厚度）
+        frame_width = img_width + 2 * border_size
+        frame_height = img_height + 2 * border_size
+
+        # 创建一个新的图像对象作为相框
+        frame = Image.new('RGB', (frame_width, frame_height), 'white')  # 相框背景为白色
+        draw = ImageDraw.Draw(frame)  # 创建绘图对象
+
+        # 将原始图片粘贴到相框中（居中）
+        x = border_size
+        y = border_size
+        frame.paste(img, (x, y))
+
+        return frame.convert("RGB")
+    elif image_filter == "留白":
+        text = write_text
+        text_color = "black"
+        padding_height = 100
+        font_size = 80
+        # 获取原始图片的尺寸
+        img_width, img_height = img.size
+
+        # 创建一个新的图像对象，宽度和高度分别为原始图片宽度和原始高度加上留白高度
+        new_height = img_height + padding_height
+        new_img = Image.new('RGB', (img_width, new_height), 'white')  # 新图像背景为白色
+
+        # 将原始图片粘贴到新图像上（留白在上方）
+        new_img.paste(img, (0, padding_height))
+
+        # 准备绘制文字
+        draw = ImageDraw.Draw(new_img)
+
+        current_directory = os.path.dirname(os.path.realpath(__file__))
+        font_file = current_directory + "/YangRenDongZhuShiTi-Light-2.ttf"
+
+        font = ImageFont.truetype(font_file, font_size)
+
+        # 计算文字的位置（位于留白区域的中间）
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+        text_x = (img_width - text_width) / 2
+        text_y = (text_height - padding_height) / 6
+
+        # 在留白区域写上文字
+        draw.text((text_x, text_y), text, fill=text_color, font=font)
+
+        return new_img.convert("RGB")
     return img
 
 
 class PILEffects:
     @classmethod
-    def INPUT_TYPES(cls):
+    def INPUT_TYPES(self):
+
         list = ["NO",
                 "线稿-LINE0", "线稿-LINE1","线稿-LINE2", "线稿-LINE3", "线稿-LINE3.1", "线稿-LINE3.2", "线稿-LINE4","线稿-LINE5",
                 "边缘检测-FIND_EDGES", "轮廓-CONTOUR", "灰度-L",
@@ -349,10 +404,12 @@ class PILEffects:
                 "浮雕-EMBOSS",
                 "翻转_FLIP_LEFT_RIGHT", "翻转_FLIP_TOP_BOTTOM",
                 "旋转_ROTATE_45", "旋转_ROTATE_90", "旋转_ROTATE_180", "旋转_ROTATE_270",
-                "对比度_0.8", "对比度_1.2", "对比度_1.5", "对比度_2.0", "对比度_3.0","对比度_5.0"
+                "对比度_0.8", "对比度_1.2", "对比度_1.5", "对比度_2.0", "对比度_3.0","对比度_5.0",
+                "框", "留白"
                 ]
         return {'required': {'image': ('IMAGE', {'default': None}),
                              "image_filter": (list, {"default": "NO"}),
+                             "write_text": ("STRING", {"default": "画画的Baby", "multiline": True}),
                              }}
 
     RETURN_TYPES = ('IMAGE',)
@@ -361,10 +418,10 @@ class PILEffects:
     CATEGORY = 'ComfyUI_Mexx'
 
     @apply_to_batch
-    def apply_pil2(self, image, image_filter="NO"):
+    def apply_pil2(self, image, image_filter="NO", write_text="画画的Baby"):
         # Load the image
         img = tensor2pil(image)
-        result_img = mexx_image_filter(img, image_filter)
+        result_img = mexx_image_filter(img, image_filter, write_text)
         return pil2tensor(result_img)
 
 
