@@ -13,7 +13,12 @@
 
 # ComfyUI PIL Nodes
 
-PIL Nodes
+PIL Nodes, 提供了3个插件Nodes：
+
+1. PIL TITLE (Mexx)   -- 增加留白
+2. PIL Merge Image (Mexx) -- 合并图像
+3. PIL Effects (Mexx) -- 图片特效
+
 
 ## Workflow Example
 
