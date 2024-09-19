@@ -384,7 +384,7 @@ def mexx_image_filter(img, image_filter,
         text_width = bbox[2] - bbox[0]
         text_height = bbox[3] - bbox[1]
         text_x = (img_width - text_width) / 2
-        text_y = (text_height - padding_height) / 8
+        text_y = (padding_height - text_height) / 2
 
         # 在留白区域写上文字
         draw.text((text_x, text_y), text, fill=text_color, font=font)
@@ -445,7 +445,7 @@ class PilTitle:
         return {'required': {'image': ('IMAGE', {'default': None}),
                              "image_filter": (list, {"default": "NO"}),
                              "padding_height": ("INT", {"default": 100}),
-                             "font_size": ("INT", {"default": 80}),
+                             "font_size": ("INT", {"default": 60}),
                              "font_name": (font_names, {"default": "YangRenDongZhuShiTi-Light-2.ttf"}),
                              "write_text": ("STRING", {"default": "画画的Baby", "multiline": True}),
                              }}
