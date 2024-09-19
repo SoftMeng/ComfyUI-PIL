@@ -139,7 +139,11 @@ def row_noise(pim, height, weight, w):
             pim[w, h] = 255
 
 
-def mexx_image_filter(img, image_filter, write_text):
+def mexx_image_filter(img, image_filter,
+                      write_text = '画画的Baby',
+                      font_name = 'YangRenDongZhuShiTi-Light-2.ttf',
+                      padding_height = 120,
+                      font_size = 80):
     if image_filter == "线稿-LINE0":
         # 转换为灰度图
         gray_image = img.convert("L")
@@ -357,8 +361,6 @@ def mexx_image_filter(img, image_filter, write_text):
     elif image_filter == "留白":
         text = write_text
         text_color = "black"
-        padding_height = 100
-        font_size = 80
         # 获取原始图片的尺寸
         img_width, img_height = img.size
 
@@ -373,7 +375,7 @@ def mexx_image_filter(img, image_filter, write_text):
         draw = ImageDraw.Draw(new_img)
 
         current_directory = os.path.dirname(os.path.realpath(__file__))
-        font_file = current_directory + "/YangRenDongZhuShiTi-Light-2.ttf"
+        font_file = current_directory + "/font/" + font_name
 
         font = ImageFont.truetype(font_file, font_size)
 
@@ -434,8 +436,17 @@ class PilTitle:
         list = ["NO",
                 "留白"
                 ]
+        font_names = ["YangRenDongZhuShiTi-Light-2.ttf",
+                      "JinNianYeYaoJiaYouYa-2.ttf",
+                      "CEFFontsCJKMono-Regular.ttf",
+                      "庞门正道粗书体6.0.ttf",
+                      "白路飞云手写体.ttf"
+                      ]
         return {'required': {'image': ('IMAGE', {'default': None}),
                              "image_filter": (list, {"default": "NO"}),
+                             "padding_height": ("INT", {"default": 100}),
+                             "font_size": ("INT", {"default": 80}),
+                             "font_name": (font_names, {"default": "YangRenDongZhuShiTi-Light-2.ttf"}),
                              "write_text": ("STRING", {"default": "画画的Baby", "multiline": True}),
                              }}
 
@@ -445,10 +456,14 @@ class PilTitle:
     CATEGORY = 'ComfyUI_Mexx'
 
     @apply_to_batch
-    def apply_pil2(self, image, image_filter="NO", write_text="画画的Baby"):
+    def apply_pil2(self, image, image_filter="NO",
+                   write_text="画画的Baby",
+                   font_name = 'YangRenDongZhuShiTi-Light-2.ttf',
+                   padding_height = 120,
+                   font_size = 80):
         # Load the image
         img = tensor2pil(image)
-        result_img = mexx_image_filter(img, image_filter, write_text)
+        result_img = mexx_image_filter(img, image_filter, write_text, font_name, padding_height, font_size)
         return pil2tensor(result_img)
 
 
