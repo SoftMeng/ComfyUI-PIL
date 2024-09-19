@@ -1,6 +1,7 @@
+import os
+
 import numpy as np
 import torch
-import os
 from PIL import Image, ImageFilter, ImageEnhance, ImageCms, ImageOps, ImageDraw, ImageFont
 
 sRGB_profile = ImageCms.createProfile("sRGB")
@@ -114,6 +115,7 @@ def apply_to_batch(func):
 
     return wrapper
 
+
 # 领域降噪
 def calculate_noise_count(img_obj, w, h, width, height):
     count = 0
@@ -129,29 +131,31 @@ def calculate_noise_count(img_obj, w, h, width, height):
                 count += 1
     return count
 
+
 # 领域降噪
 def row_noise(pim, height, weight, w):
     for h in range(height):
         if calculate_noise_count(pim, w, h, weight, height) < 4:
             pim[w, h] = 255
 
-def mexx_image_filter(img, image_filter,write_text):
+
+def mexx_image_filter(img, image_filter, write_text):
     if image_filter == "线稿-LINE0":
         # 转换为灰度图
         gray_image = img.convert("L")
         array = np.array(gray_image).astype(np.float32)
         # 根据灰度变化来模拟人类视觉的明暗程度
-        depth = 10 # 预设虚拟深度值为10 范围为0-100
+        depth = 10  # 预设虚拟深度值为10 范围为0-100
         # 提取x y方向梯度值 解构赋给grad_x, grad_y
         grad_x, grad_y = np.gradient(array)
         # 利用像素之间的梯度值和虚拟深度值对图像进行重构
         grad_x = grad_x * depth / 100
-        grad_y = grad_y * depth/ 100
+        grad_y = grad_y * depth / 100
         # 梯度归一化 定义z深度为1.  将三个梯度绝对值转化为相对值，在三维中是相对于斜对角线A的值
-        dis = np.sqrt(grad_x**2 + grad_y**2 + 1.0)
-        uni_x = grad_x/dis
-        uni_y = grad_y/dis
-        uni_z = 1.0/dis
+        dis = np.sqrt(grad_x ** 2 + grad_y ** 2 + 1.0)
+        uni_x = grad_x / dis
+        uni_y = grad_y / dis
+        uni_z = 1.0 / dis
         # 光源俯视角度和光源方位角度
         vec_el = np.pi / 2.2
         vec_az = np.pi / 4
@@ -160,16 +164,16 @@ def mexx_image_filter(img, image_filter,write_text):
         dy = np.cos(vec_el) * np.sin(vec_az)
         dz = np.sin(vec_el)
         # 光源归一化
-        out = 255 *(uni_x*dx + uni_y*dy + uni_z*dz)
+        out = 255 * (uni_x * dx + uni_y * dy + uni_z * dz)
         out = out.clip(0, 255)
         img = Image.fromarray(out.astype(np.uint8))
         return img.convert("RGB")
     if image_filter == "线稿-LINE1":
         gray_image = img.convert("L")
-        im = gray_image.filter(ImageFilter.GaussianBlur(radius=0.75)) # 高斯模糊 75%
+        im = gray_image.filter(ImageFilter.GaussianBlur(radius=0.75))  # 高斯模糊 75%
         a = np.asarray(im).astype(np.float32)
 
-        depth = 10. # 设定虚拟深度
+        depth = 10.  # 设定虚拟深度
         grad = np.gradient(a)
         grad_x, grad_y = grad
         grad_x = grad_x * depth / 100.
@@ -378,7 +382,7 @@ def mexx_image_filter(img, image_filter,write_text):
         text_width = bbox[2] - bbox[0]
         text_height = bbox[3] - bbox[1]
         text_x = (img_width - text_width) / 2
-        text_y = (text_height - padding_height) / 6
+        text_y = (text_height - padding_height) / 8
 
         # 在留白区域写上文字
         draw.text((text_x, text_y), text, fill=text_color, font=font)
@@ -387,25 +391,48 @@ def mexx_image_filter(img, image_filter,write_text):
     return img
 
 
-class PILEffects:
+class PilEffects:
     @classmethod
     def INPUT_TYPES(self):
-
         list = ["NO",
-                "线稿-LINE0", "线稿-LINE1","线稿-LINE2", "线稿-LINE3", "线稿-LINE3.1", "线稿-LINE3.2", "线稿-LINE4","线稿-LINE5",
+                "线稿-LINE0", "线稿-LINE1", "线稿-LINE2", "线稿-LINE3", "线稿-LINE3.1", "线稿-LINE3.2", "线稿-LINE4",
+                "线稿-LINE5",
                 "边缘检测-FIND_EDGES", "轮廓-CONTOUR", "灰度-L",
                 "细节-DETAIL",
                 "平滑-SMOOTH", "平滑-SMOOTH_MORE",
                 "锐化-SHARPEN", "锐化-UNSHARP_MASK",
-                "边缘增强-EDGE_ENHANCE","边缘增强-EDGE_ENHANCE_MORE",
+                "边缘增强-EDGE_ENHANCE", "边缘增强-EDGE_ENHANCE_MORE",
                 "模糊-BLUR", "模糊-BOX_BLUR", "模糊-GAUSSIAN_BLUR",
                 "反相-INVERT",
                 "去燥-中值滤波器",
                 "浮雕-EMBOSS",
                 "翻转_FLIP_LEFT_RIGHT", "翻转_FLIP_TOP_BOTTOM",
                 "旋转_ROTATE_45", "旋转_ROTATE_90", "旋转_ROTATE_180", "旋转_ROTATE_270",
-                "对比度_0.8", "对比度_1.2", "对比度_1.5", "对比度_2.0", "对比度_3.0","对比度_5.0",
-                "框", "留白"
+                "对比度_0.8", "对比度_1.2", "对比度_1.5", "对比度_2.0", "对比度_3.0", "对比度_5.0",
+                "框"
+                ]
+        return {'required': {'image': ('IMAGE', {'default': None}),
+                             "image_filter": (list, {"default": "NO"})
+                             }}
+
+    RETURN_TYPES = ('IMAGE',)
+    RETURN_NAMES = ('result_img',)
+    FUNCTION = 'apply_pil1'
+    CATEGORY = 'ComfyUI_Mexx'
+
+    @apply_to_batch
+    def apply_pil1(self, image, image_filter="NO", write_text="画画的Baby"):
+        # Load the image
+        img = tensor2pil(image)
+        result_img = mexx_image_filter(img, image_filter, write_text)
+        return pil2tensor(result_img)
+
+
+class PilTitle:
+    @classmethod
+    def INPUT_TYPES(self):
+        list = ["NO",
+                "留白"
                 ]
         return {'required': {'image': ('IMAGE', {'default': None}),
                              "image_filter": (list, {"default": "NO"}),
@@ -424,6 +451,122 @@ class PILEffects:
         result_img = mexx_image_filter(img, image_filter, write_text)
         return pil2tensor(result_img)
 
+
+class PilMergeImage:
+    @classmethod
+    def INPUT_TYPES(self):
+        merge_type_list = ["上下", "左右", "平行四边形"]
+        return {'required': {'merge_type': (merge_type_list, {"default": "左右"}),
+                             'image': ('IMAGE', {'default': None}),
+                             'image2': ('IMAGE', {'default': None}),
+                             },
+                'optional': {
+                    'image3': ('IMAGE', {'default': None}),
+                    'image4': ('IMAGE', {'default': None}),
+                    'image5': ('IMAGE', {'default': None}),
+                    'image6': ('IMAGE', {'default': None}),
+                }}
+
+    RETURN_TYPES = ('IMAGE',)
+    RETURN_NAMES = ('result_img',)
+    FUNCTION = 'apply_pil3'
+    CATEGORY = 'ComfyUI_Mexx'
+
+    @apply_to_batch
+    def apply_pil3(self, image, image2, image3 = None, image4  = None, image5  = None, image6 = None, merge_type="左右"):
+        print(f"PIL Merge Image Start")
+        images = []
+        # Load the image
+        img1 = tensor2pil(image)
+        images.append(img1)
+        print(f"Image1: {img1.size}")
+        img2 = tensor2pil(image2)
+        images.append(img2)
+        print(f"Image2: {img2.size}")
+        if image3 is not None:
+            img3 = tensor2pil(image3)
+            images.append(img3)
+            print(f"Image3: {img3.size}")
+        if image4 is not None:
+            img4 = tensor2pil(image4)
+            images.append(img4)
+            print(f"Image4: {img4.size}")
+        if image5 is not None:
+            img5 = tensor2pil(image5)
+            images.append(img5)
+            print(f"Image5: {img5.size}")
+        if image6 is not None:
+            img6 = tensor2pil(image6)
+            images.append(img6)
+            print(f"Image6: {img6.size}")
+
+        # 确保所有图片尺寸相同
+        for img in images:
+            if img.size != images[0].size:
+                raise ValueError("All images must be the same size")
+
+        # 获取图片的宽度和高度
+        width, height = images[0].size
+        print(f"PIL Merge Image: {width}, {height}")
+
+        if merge_type == "左右":
+            # 计算每张图片的宽度部分
+            part_width = width // len(images)
+            print(f"PIL Merge part_width: {part_width}")
+
+            # 创建一个新的图片，用于合成
+            combined_image = Image.new('RGB', (width, height))
+
+            # 依次将每张图片的相应部分粘贴到合成图片上
+            for i, image in enumerate(images):
+                part = image.crop((i * part_width, 0, (i + 1) * part_width, height))
+                combined_image.paste(part, (i * part_width, 0))
+                print(f"PIL Merge i = {i}")
+
+            print(f"result_img: {combined_image.size}")
+            return pil2tensor(combined_image)
+        if merge_type == "上下":
+
+            # 计算每张图片的宽度部分
+            part_height = height // len(images)
+            # 创建一个新的图片，用于合成
+            combined_image = Image.new('RGB', (width, height))
+
+            # 依次将每张图片的相应部分粘贴到合成图片上
+            for i, image in enumerate(images):
+                part = image.crop((0, i * part_height, width, (i + 1) * part_height))
+                combined_image.paste(part, (0, i * part_height))
+                print(f"PIL Merge i = {i}")
+
+            print(f"result_img: {combined_image.size}")
+            return pil2tensor(combined_image)
+
+        if merge_type == "平行四边形":
+            # 定义平行四边形的四个顶点坐标（相对于图片左上角）
+            # 例如，这里定义了一个从左上角开始的平行四边形
+            points = [
+                (0, 0),
+                (img1.width // 2, 0),
+                (img1.width, img1.height),
+                (img1.width // 2, img1.height)
+                ]
+
+            # 创建一个和图片同样大小的透明遮罩
+            mask = Image.new('L', img1.size, 0)
+            draw = ImageDraw.Draw(mask)
+
+            # 绘制平行四边形遮罩
+            draw.polygon(points, fill=255)
+
+            # 将图2的平行四边形区域应用遮罩
+            img2 = img2.copy()
+            img2.putalpha(mask)
+
+            # 将图1和图2合成
+            combined_image = Image.composite(img2, img1, mask)
+            return pil2tensor(combined_image)
+
+        raise ValueError("Merge Type Error")
 
 def adjust_brightness(image, brightness_factor):
     enhancer = ImageEnhance.Brightness(image)
@@ -510,9 +653,13 @@ def resize_and_crop(pil_img, target_width, target_height):
 
 
 NODE_CLASS_MAPPINGS = {
-    'PIL Effects (Mexx)': PILEffects
+    'PIL Effects (Mexx)': PilEffects,
+    'PIL TITLE (Mexx)': PilTitle,
+    'PIL Merge Image (Mexx)': PilMergeImage
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    'PILEffects': 'PIL Effects (Mexx)'
+    'PIL_Effects': 'PIL Effects (Mexx)',
+    'PIL_TITLE': 'PIL TITLE (Mexx)',
+    'PIL_MergeImage': 'PIL Merge Image (Mexx)'
 }

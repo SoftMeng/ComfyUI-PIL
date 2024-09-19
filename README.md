@@ -6,9 +6,13 @@ PIL Nodes
 
 [PIL图像处理DEMO.json](example/PIL%E5%9B%BE%E5%83%8F%E5%A4%84%E7%90%86DEMO.json)
 
-## Example
+## PIL TITLE (Mexx) & PIL Merge Image (Mexx)
 
-### 原始图片
+![00007.jpg](image/00007.jpg)
+
+## PIL Effects (Mexx)
+
+### 原始
 ![Origin.jpg](image/Origin.jpg)
 ### 线稿-LINE0
 ![Mexx_0190.jpg](image/Mexx_0190.jpg)
