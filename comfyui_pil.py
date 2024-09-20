@@ -583,6 +583,67 @@ class PilMergeImage:
 
         raise ValueError("Merge Type Error")
 
+class PilRemoveBlackDots:
+    @classmethod
+    def INPUT_TYPES(self):
+        return {'required': {'image': ('IMAGE', {'default': None}),
+                             'threshold': ('INT', {'default': 128}),
+                             'dot_size': ('INT', {'default': 2}),
+                             }}
+
+    RETURN_TYPES = ('IMAGE',)
+    RETURN_NAMES = ('result_img',)
+    FUNCTION = 'apply_pil4'
+    CATEGORY = 'ComfyUI_Mexx'
+
+    @apply_to_batch
+    def apply_pil4(self, image, threshold, dot_size):
+        img = tensor2pil(image)
+        # 加载像素数据
+        pixels = img.load()
+        width, height = img.size
+
+        # 遍历图像中的每个像素
+        for x in range(width):
+            for y in range(height):
+                r, g, b = pixels[x, y]
+                # 计算灰色程度，如果接近灰色，则将其转换为白色
+                if r > threshold and g > threshold and b > threshold:
+                    pixels[x, y] = (255, 255, 255)
+
+        # 将图像转换为灰度模式
+        img = img.convert('L')
+        # 加载像素数据
+        pixels = img.load()
+
+        # 遍历图像中的每个像素
+        for x in range(width):
+            for y in range(height):
+                # 如果像素值低于某个阈值，则认为是黑点
+                if pixels[x, y] < threshold:
+                    # 检查周围的像素，如果黑点很小，则去除
+                    if all(pixels[max(x-i, 0), max(y-j, 0)] > 128 for i in range(dot_size) for j in range(dot_size)):
+                        pixels[x, y] = 255
+        # 遍历图像中的每个像素
+        for x in range(width):
+            for y in range(height):
+                # 如果像素值低于某个阈值，则认为是黑点
+                if pixels[x, y] < threshold:
+                    # 检查周围的像素，如果黑点很小，则去除
+                    if all(pixels[max(x-i, 0), max(y-j, 0)] > 128 for i in range(dot_size) for j in range(dot_size)):
+                        pixels[x, y] = 255
+        # 遍历图像中的每个像素
+        for x in range(width):
+            for y in range(height):
+                # 如果像素值低于某个阈值，则认为是黑点
+                if pixels[x, y] < threshold:
+                    # 检查周围的像素，如果黑点很小，则去除
+                    if all(pixels[max(x-i, 0), max(y-j, 0)] > 128 for i in range(dot_size) for j in range(dot_size)):
+                        pixels[x, y] = 255
+
+        return pil2tensor(img.convert('RGB'))
+
+
 def adjust_brightness(image, brightness_factor):
     enhancer = ImageEnhance.Brightness(image)
     adjusted_image = enhancer.enhance(brightness_factor)
@@ -670,11 +731,13 @@ def resize_and_crop(pil_img, target_width, target_height):
 NODE_CLASS_MAPPINGS = {
     'PIL Effects (Mexx)': PilEffects,
     'PIL TITLE (Mexx)': PilTitle,
-    'PIL Merge Image (Mexx)': PilMergeImage
+    'PIL Merge Image (Mexx)': PilMergeImage,
+    'PIL Remove Black Dots (Mexx)': PilRemoveBlackDots
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     'PIL_Effects': 'PIL Effects (Mexx)',
     'PIL_TITLE': 'PIL TITLE (Mexx)',
-    'PIL_MergeImage': 'PIL Merge Image (Mexx)'
+    'PIL_MergeImage': 'PIL Merge Image (Mexx)',
+    'PIL_RemoveBlackDots': 'PIL Remove Black Dots (Mexx)'
 }

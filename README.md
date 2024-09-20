@@ -18,6 +18,7 @@ PIL Nodes, 提供了3个插件Nodes：
 1. PIL TITLE (Mexx)   -- 增加留白
 2. PIL Merge Image (Mexx) -- 合并图像
 3. PIL Effects (Mexx) -- 图片特效
+4. PIL Remove Black Dots (Mexx)  -- 给线稿脱色，去除一些黑色的噪点
 
 
 ## Workflow Example
