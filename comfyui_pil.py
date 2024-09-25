@@ -443,7 +443,7 @@ class PilTitle:
                       "白路飞云手写体.ttf"
                       ]
         return {'required': {'image': ('IMAGE', {'default': None}),
-                             "image_filter": (list, {"default": "NO"}),
+                             "image_filter": (list, {"default": "留白"}),
                              "padding_height": ("INT", {"default": 100}),
                              "font_size": ("INT", {"default": 60}),
                              "font_name": (font_names, {"default": "YangRenDongZhuShiTi-Light-2.ttf"}),
