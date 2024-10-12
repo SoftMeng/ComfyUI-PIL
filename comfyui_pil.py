@@ -339,6 +339,22 @@ def mexx_image_filter(img, image_filter,
         contrast_enhancer = ImageEnhance.Contrast(img)
         enhanced_image = contrast_enhancer.enhance(5.0)
         return enhanced_image
+    elif image_filter == "色彩_0.5":
+        contrast_enhancer = ImageEnhance.Color(img)
+        enhanced_image = contrast_enhancer.enhance(0.5)
+        return enhanced_image
+    elif image_filter == "色彩_0.8":
+        contrast_enhancer = ImageEnhance.Color(img)
+        enhanced_image = contrast_enhancer.enhance(0.8)
+        return enhanced_image
+    elif image_filter == "色彩_1.2":
+        contrast_enhancer = ImageEnhance.Color(img)
+        enhanced_image = contrast_enhancer.enhance(1.2)
+        return enhanced_image
+    elif image_filter == "色彩_1.5":
+        contrast_enhancer = ImageEnhance.Color(img)
+        enhanced_image = contrast_enhancer.enhance(1.5)
+        return enhanced_image
     elif image_filter == "框":
         border_size = 20
         # 获取原始图片的尺寸
@@ -411,6 +427,7 @@ class PilEffects:
                 "翻转_FLIP_LEFT_RIGHT", "翻转_FLIP_TOP_BOTTOM",
                 "旋转_ROTATE_45", "旋转_ROTATE_90", "旋转_ROTATE_180", "旋转_ROTATE_270",
                 "对比度_0.8", "对比度_1.2", "对比度_1.5", "对比度_2.0", "对比度_3.0", "对比度_5.0",
+                "色彩_0.5",  "色彩_0.8", "色彩_1.2", "色彩_1.5",
                 "框"
                 ]
         return {'required': {'image': ('IMAGE', {'default': None}),
